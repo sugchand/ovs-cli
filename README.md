@@ -20,3 +20,16 @@ in a custom file path. In order to support this, The path variables in ovs_cmd_d
 * Run from the terminal by
 
     `./ovs_cli.py`
+
+The usage and options for ovs_cli
+```
+usage: ovs_cli.py [-h] [-p PATH] [-s]
+
+ovs-cli : CLI for OVS Debugging
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PATH, --path PATH  Path to OVS binary files, seperated by :
+  -s, --sudo            Execute commands in sudo
+
+```
