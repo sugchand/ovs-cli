@@ -95,7 +95,8 @@ def process_tokensublist(cmd_input, token_diclist):
 def parse_pgm_args():
     global OVS_BIN_PATH
     global OVS_SUDO_CMD
-    parser = argparse.ArgumentParser(description='ovs-cli')
+    parser = argparse.ArgumentParser(description="ovs-cli    :"
+                                     "    CLI for OVS Debugging")
     parser.add_argument('-p','--path', help='Path to OVS binary files, seperated by :',
                         type=str, default="",dest="path",required=False)
     parser.add_argument('-s','--sudo', help='Execute commands in sudo',
