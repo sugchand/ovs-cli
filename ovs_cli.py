@@ -49,7 +49,8 @@ def print_banner():
 
 def print_mask(string, mask_len = 1, mask_char = ' '):
     sys.stdout.write("%s" % string)
-    sys.stdout.write("%c" * mask_len % mask_char)
+    if(mask_len):
+        sys.stdout.write("%c" * mask_len % mask_char)
     sys.stdout.flush()
 
 def print_cmd_list(cmd_diclist):
@@ -128,17 +129,18 @@ def do_execute_cmd(cmd):
     if OVS_SUDO_CMD:
         #Need to run command in sudo mode.
         ovs_sudo = OVS_SUDO_CMD.split()
-    exec_cmd = ovs_sudo + exec_cmd
-
+        exec_cmd = ovs_sudo + exec_cmd
     exec_cmd = filter(None, exec_cmd)
+    cmd_env = os.environ.copy()
     if OVS_BIN_PATH:
-        cmd_env = os.environ.copy()
         cmd_env["PATH"] = OVS_BIN_PATH + ":" + cmd_env["PATH"]
     try:
+        print("\n")
         out = subprocess.Popen(exec_cmd, env = cmd_env)
+        out.wait()
+        return out.returncode
     except Exception as e:
         raise e
-    out.wait()
 
 def parse_pgm_args():
     global OVS_BIN_PATH
@@ -198,11 +200,12 @@ if __name__ == '__main__':
             continue
         elif ch_byte == 0xD: # New line
             try:
-                do_execute_cmd(cmd_input)
-            except:
-                print("\nInvalid command..\n")
-            else:
-                clean_cli()
+                res = do_execute_cmd(cmd_input)
+                if(not res):
+                    clean_cli()
+                    print_mask(OVS_CLI_CMD_PROMPT + cmd_input, mask_len=0)
+            except Exception as e:
+                print("\nInvalid command[%s]..\n" % e)
             continue
         elif ch_byte < 0x20 or ch_byte > 0x7E: # Special characters
             exit()
