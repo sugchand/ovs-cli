@@ -1,11 +1,11 @@
-'''
-Created on 16 Mar 2017
-
-@author: sugesh
-'''
+#! /usr/bin/python3
+# -*- coding: utf8 -*-
+# author : "Sugesh Chandran"
+# Command token dictionary set.
 
 '''
 The list has to be in token : [sub_cmd_dic, help string, optional].
+
 '''
 
 ofprototracesub_cmd = {
@@ -13,12 +13,12 @@ ofprototracesub_cmd = {
                        }
 
 ofprototracebr_cmd = {
-                      "<[in_port=<PORT-NO>,dl_src=<SRC-MAC,dl_dst=<DST-MAC>]>":
+                      "<[in_port=PORTNO,dl_src=SRCMAC,dl_dst=DSTMAC]>":
                       [ofprototracesub_cmd, "flow details", False]
                       }
 
 ofprototrace_cmd = {
-                    "<BRIDGE-NAME>" : [ofprototracebr_cmd, "Bridge name", False]
+                    "<BRIDGENAME>" : [ofprototracebr_cmd, "Bridge name", False]
                     }
 
 ovsappctl_cmd = {
