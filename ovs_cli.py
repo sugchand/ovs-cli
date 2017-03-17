@@ -1,11 +1,11 @@
-'''
-Created on 16 Mar 2017
+#! /usr/bin/python3
+# -*- coding: utf8 -*-
+# author : "Sugesh Chandran"
+# CLI framework for easy access of ovs debug commands.
 
-@author: sugesh
-'''
 import sys, tty, termios
 from ovs_cmd_dic import *
-
+import platform
 
 
 def getch():
@@ -73,6 +73,10 @@ def process_tokensublist(cmd_input, token_diclist):
     return token_sublist
 
 if __name__ == '__main__':
+    if platform.system() != 'Linux':
+        print("OVS-CLI supports only on Linux " +
+                                     "platform for now")
+        exit(1)
     cmd_input = ""
     mask = ""
     cur_dic = [ovs_cmd]
