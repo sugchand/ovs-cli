@@ -35,6 +35,12 @@ def pop_tokenlist(default_tokenlist):
         return default_tokenlist
     return gbl_token_stack.pop()
 
+def print_banner():
+    string1 = "                         OVS-CLI                         "
+    print("*" * (len(string1) + 4))
+    print("*", string1, "*")
+    print("*" * (len(string1) + 4))
+
 def print_cmd_list(cmd_diclist):
     print("\n")
     if not cmd_diclist:
@@ -119,6 +125,7 @@ if __name__ == '__main__':
     cur_elem =None
 
     parse_pgm_args()
+    print_banner()
     while(1) :
         # Reading the character as bytes.
         sys.stdout.write("\r ovs-cli# %s" % (cmd_input))
