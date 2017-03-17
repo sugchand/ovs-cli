@@ -36,3 +36,8 @@ ovs_cmd = {
            "ovs-appctl" : [ovsappctl_cmd, "OVS run time command options.", False]
            }
 
+# Update the BIN path if OVS and OVSDB binaries located in a different directory
+# Add multiple filepaths seperated by :
+OVS_BIN_PATH = ""
+# Set the sudo option empty for running commands in non sudo mode.
+OVS_SUDO_CMD = ""

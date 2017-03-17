@@ -6,6 +6,7 @@
 import sys, tty, termios
 from ovs_cmd_dic import *
 import platform
+import argparse
 
 # The global stack for context handling.
 gbl_token_stack = []
@@ -91,6 +92,21 @@ def process_tokensublist(cmd_input, token_diclist):
             token_strlist = token_strlist + tkn_list
     return token_strlist
 
+def parse_pgm_args():
+    global OVS_BIN_PATH
+    global OVS_SUDO_CMD
+    parser = argparse.ArgumentParser(description='ovs-cli')
+    parser.add_argument('-p','--path', help='Path to OVS binary files, seperated by :',
+                        type=str, default="",dest="path",required=False)
+    parser.add_argument('-s','--sudo', help='Execute commands in sudo',
+                        action="store_true", dest="sudo_run", default=False,
+                        required=False)
+    args = parser.parse_args()
+    if args.path:
+        OVS_BIN_PATH = OVS_BIN_PATH + args.path
+    if args.sudo_run:
+        OVS_SUDO_CMD = "sudo -E"
+
 if __name__ == '__main__':
     if platform.system() != 'Linux':
         print("OVS-CLI supports only on Linux " +
@@ -101,6 +117,7 @@ if __name__ == '__main__':
     cur_dic = [ovs_cmd]
     cur_elem =None
 
+    parse_pgm_args()
     while(1) :
         # Reading the character as bytes.
         sys.stdout.write("\r ovs-cli# %s" % (cmd_input))
