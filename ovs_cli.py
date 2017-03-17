@@ -41,6 +41,11 @@ def print_banner():
     print("*", string1, "*")
     print("*" * (len(string1) + 4))
 
+def print_mask(string, mask_len = 1, mask_char = ' '):
+    sys.stdout.write("%s" % string)
+    sys.stdout.write("%c" * mask_len % mask_char)
+    sys.stdout.flush()
+
 def print_cmd_list(cmd_diclist):
     print("\n")
     if not cmd_diclist:
@@ -101,6 +106,7 @@ def process_tokensublist(cmd_input, token_diclist):
 def parse_pgm_args():
     global OVS_BIN_PATH
     global OVS_SUDO_CMD
+
     parser = argparse.ArgumentParser(description="ovs-cli    :"
                                      "    CLI for OVS Debugging")
     parser.add_argument('-p','--path', help='Path to OVS binary files, seperated by :',
@@ -119,6 +125,7 @@ if __name__ == '__main__':
         print("OVS-CLI supports only on Linux " +
                                      "platform for now")
         exit(1)
+    global OVS_CLI_CMD_PROMPT
     cmd_input = ""
     mask = ""
     cur_dic = [ovs_cmd]
@@ -126,9 +133,11 @@ if __name__ == '__main__':
 
     parse_pgm_args()
     print_banner()
+    OVS_CLI_CMD_PROMPT = "\r " + OVS_CLI_CMD_PROMPT + " "
+
     while(1) :
         # Reading the character as bytes.
-        sys.stdout.write("\r ovs-cli# %s" % (cmd_input))
+        sys.stdout.write("%s%s" % (OVS_CLI_CMD_PROMPT, cmd_input))
         sys.stdout.flush()
         ch = getch()
         ch_byte = ord(ch)
@@ -150,8 +159,9 @@ if __name__ == '__main__':
                     cur_dic = pop_tokenlist([ovs_cmd])
                 cmd_input = cmd_input[:-1]
                 # Mask the deleted one 
-                sys.stdout.write("\r ovs-cli# %s " % (cmd_input))
-                sys.stdout.flush()
+                #sys.stdout.write("\r ovs-cli# %s " % (cmd_input))
+                #sys.stdout.flush()
+                print_mask(OVS_CLI_CMD_PROMPT + cmd_input)
             continue
         elif ch_byte == 0xD: # New line
             exit()

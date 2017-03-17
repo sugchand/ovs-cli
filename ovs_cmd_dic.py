@@ -41,3 +41,4 @@ ovs_cmd = {
 OVS_BIN_PATH = ""
 # Set the sudo option empty for running commands in non sudo mode.
 OVS_SUDO_CMD = ""
+OVS_CLI_CMD_PROMPT = "ovs-cli#"
