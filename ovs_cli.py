@@ -7,6 +7,8 @@ import sys, tty, termios
 from ovs_cmd_dic import *
 import platform
 
+# The global stack for context handling.
+gbl_token_stack = []
 
 def getch():
     fd = sys.stdin.fileno()
@@ -20,12 +22,24 @@ def getch():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
+def push_tokenlist(token_list):
+    if token_list:
+        gbl_token_stack.append(token_list)
+        return True
+    return False
+
+# Pop the tokenlist from stack, return the default value id stack is empty
+def pop_tokenlist(default_tokenlist):
+    if not gbl_token_stack:
+        return default_tokenlist
+    return gbl_token_stack.pop()
+
 def print_cmd_list(cmd_diclist):
     print("\n")
     if not cmd_diclist:
         return
     for cmd_dic in cmd_diclist:
-        for key, value in cmd_dic.iteritems():
+        for key, value in cmd_dic.items():
             print("   %s         %s" %(key, value[1]))
     print("\n")
 
@@ -39,7 +53,7 @@ Return list of dictionary sublist that has string literal as key.
 '''
 def find_string_tokens(token_dic):
     token_sublist = []
-    for key, data in token_dic.iteritems():
+    for key, data in token_dic.items():
         if not is_token_string(key):
             continue
         token_sublist.append(data[0])
@@ -58,7 +72,7 @@ def process_token(cmd_input, token_dic):
         # it is possible that there are multiple arbitrary string in the list.
         # Lets consider sublist from all string pattern.
         token_sublist = find_string_tokens(token_dic)
-        return [True, token_sublist]
+        return [False, token_sublist]
     token_data = token_dic.get(last_token, None)
     if token_data == None or token_data[0] == None:
         return [False, []]
@@ -66,11 +80,16 @@ def process_token(cmd_input, token_dic):
 
 def process_tokensublist(cmd_input, token_diclist):
     token_sublist = []
+    token_strlist = []
     for token_dic in token_diclist:
         [ret, tkn_list] = process_token(cmd_input, token_dic)
         if ret:
             token_sublist = token_sublist + tkn_list
-    return token_sublist
+            return token_sublist
+        else:
+            # Can be a string match, So lets populate in different list.
+            token_strlist = token_strlist + tkn_list
+    return token_strlist
 
 if __name__ == '__main__':
     if platform.system() != 'Linux':
@@ -95,12 +114,15 @@ if __name__ == '__main__':
             if not token_sublist:
                 # Failed to find the token, cannot do anything.
                 continue
+            push_tokenlist(cur_dic) # Push to the stack for future reference.
             cur_dic = token_sublist
         elif ch_byte == 0x9 or ch_byte == 0x3F: # Tab/? handling.
             print_cmd_list(cur_dic)
             continue
         elif ch_byte == 0x7F: #Backspace,DEL handling
             if cmd_input:
+                if cmd_input.endswith(' '):
+                    cur_dic = pop_tokenlist([ovs_cmd])
                 cmd_input = cmd_input[:-1]
                 # Mask the deleted one 
                 sys.stdout.write("\r ovs-cli# %s " % (cmd_input))
@@ -111,5 +133,5 @@ if __name__ == '__main__':
         elif ch_byte < 0x20 or ch_byte > 0x7E: # Special characters
             exit()
 
-        ch = ch.decode("utf-8")
+        #ch = ch.decode("utf-8")
         cmd_input = cmd_input + ch
