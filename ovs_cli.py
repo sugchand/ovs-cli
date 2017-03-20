@@ -125,15 +125,15 @@ def do_execute_cmd(cmd):
     if not cmd:
         return True
     exec_cmd = []
-    exec_cmd.append(cmd)
-    if OVS_SUDO_CMD:
-        #Need to run command in sudo mode.
-        ovs_sudo = OVS_SUDO_CMD.split()
-        exec_cmd = ovs_sudo + exec_cmd
-    exec_cmd = filter(None, exec_cmd)
+
     cmd_env = os.environ.copy()
     if OVS_BIN_PATH:
         cmd_env["PATH"] = OVS_BIN_PATH + ":" + cmd_env["PATH"]
+    if OVS_SUDO_CMD:
+        #Need to run command in sudo mode.
+        cmd = OVS_SUDO_CMD + " env PATH=$PATH:" + OVS_BIN_PATH + " " + cmd
+    exec_cmd = cmd.split()
+    exec_cmd = filter(None, exec_cmd)
     try:
         print("\n")
         out = subprocess.Popen(exec_cmd, env = cmd_env)
