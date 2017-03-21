@@ -33,7 +33,8 @@ ovsvsctl_cmd = {
 
 ovs_cmd = {
            "ovs-vsctl" : [ovsvsctl_cmd, "Configured ovs-vswitchd.", False],
-           "ovs-appctl" : [ovsappctl_cmd, "OVS run time command options.", False]
+           "ovs-appctl" : [ovsappctl_cmd, "OVS run time command options.", False],
+           "htop" : [None, "Process viewer for Linux machine.", False]
            }
 
 # Update the BIN path if OVS and OVSDB binaries located in a different directory
@@ -42,3 +43,4 @@ OVS_BIN_PATH = ""
 # Set the sudo option empty for running commands in non sudo mode.
 OVS_SUDO_CMD = ""
 OVS_CLI_CMD_PROMPT = "ovs-cli#"
+OVS_CLI_HISTORY_SIZE = 5

@@ -9,11 +9,22 @@ import platform
 import argparse
 import subprocess
 import os
+from collections import deque
 
 # The global stack for context handling.
 gbl_token_stack = []
 cmd_input = ""
 cur_dic = [ovs_cmd]
+
+global OVS_CLI_HISTORY_SIZE
+# The history stack holds the command history.
+# The size of history is limited to OVS_CLI_HISTORY_SIZE
+# Each element in the deque holds a list with members
+# token_stack, cmd_input and cur_dic.
+cmd_history_stack = deque(maxlen = OVS_CLI_HISTORY_SIZE)
+# The index of current element in history. Reset it to -1 if its points to
+# nothing.
+cmd_history_index = -1
 
 def getch():
     fd = sys.stdin.fileno()
@@ -26,6 +37,51 @@ def getch():
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
+
+# Add the current command to the history for the future use.
+# the token_stack, current_dic and cmd string stored in history.
+def add_cmd_to_history():
+    global cmd_history_stack
+    global cmd_history_index
+    if not cmd_input:
+        return
+    cmd_history_stack.append([cmd_input, cur_dic, gbl_token_stack])
+    cmd_history_index = len(cmd_history_stack)
+
+def load_prevcmd_from_history():
+    global cmd_history_stack
+    global cmd_history_index
+    global cmd_input
+    global cur_dic
+    global gbl_token_stack
+
+    if cmd_history_index <= 0:
+        # Nothing to load, return
+        return False
+
+    cmd_history_index -= 1
+    curr_cmdset = cmd_history_stack[cmd_history_index]
+    cmd_input = curr_cmdset[0] # the command string.
+    cur_dic = curr_cmdset[1]
+    gbl_token_stack = curr_cmdset[2]
+    return True
+
+def load_nxtcmd_from_history():
+    global cmd_history_stack
+    global cmd_history_index
+    global cmd_input
+    global cur_dic
+    global gbl_token_stack
+
+    if cmd_history_index >= len(cmd_history_stack) - 1:
+        # Nothing to load, return
+        return False
+    cmd_history_index += 1
+    curr_cmdset = cmd_history_stack[cmd_history_index]
+    cmd_input = curr_cmdset[0]
+    cur_dic = curr_cmdset[1]
+    gbl_token_stack = curr_cmdset[2]
+    return True
 
 def push_tokenlist(token_list):
     global gbl_token_stack
@@ -50,7 +106,7 @@ def print_banner():
 def print_mask(string, mask_len = 1, mask_char = ' '):
     sys.stdout.write("%s" % string)
     if(mask_len):
-        sys.stdout.write("%c" * mask_len % mask_char)
+        sys.stdout.write("{}".format(mask_char) * mask_len)
     sys.stdout.flush()
 
 def print_cmd_list(cmd_diclist):
@@ -110,6 +166,25 @@ def process_tokensublist(cmd_input, token_diclist):
             token_strlist = token_strlist + tkn_list
     return token_strlist
 
+def process_escape_chars():
+    # Process the up and down arrow
+    # Up and down arrows are combination of 3 ascci values
+    # Up : 0x1B, 0x5B, 0x41(27, 91, 65)
+    # Down 0x1B, 0x5B, 0x42(27, 91, 66)
+    global cmd_input
+    old_cmd = cmd_input
+    ch_byte = ord(getch())
+    if ch_byte != 0x5B:
+        return
+    ch_byte = ord(getch())
+    if ch_byte == 0x41: #Up arrow, get previous command from history.
+        res = load_prevcmd_from_history()
+    elif ch_byte == 0x42: #Down arrow, get next command from the history.
+        res = load_nxtcmd_from_history()
+    if res:
+        # The command is loaded successfully from history, Clean the terminal.
+        print_mask(OVS_CLI_CMD_PROMPT, mask_len=len(old_cmd))
+
 def clean_cli():
     global gbl_token_stack
     global cmd_input
@@ -124,7 +199,6 @@ def do_execute_cmd(cmd):
 
     if not cmd:
         return True
-    exec_cmd = []
 
     cmd_env = os.environ.copy()
     if OVS_BIN_PATH:
@@ -177,8 +251,10 @@ if __name__ == '__main__':
         ch = getch()
         ch_byte = ord(ch)
 
-        #print(ch_byte)
-        if ch_byte == 0x20: #Space handling.
+        if ch_byte == 0x1B: # Escape character, Read more characters to process.
+            process_escape_chars()
+            continue
+        elif ch_byte == 0x20:  #Space handling.
             token_sublist = process_tokensublist(cmd_input, cur_dic)
             if not token_sublist:
                 # Failed to find the token, cannot do anything.
@@ -201,11 +277,12 @@ if __name__ == '__main__':
         elif ch_byte == 0xD: # New line
             try:
                 res = do_execute_cmd(cmd_input)
-                if(not res):
-                    clean_cli()
-                    print_mask(OVS_CLI_CMD_PROMPT + cmd_input, mask_len=0)
             except Exception as e:
                 print("\nInvalid command[%s]..\n" % e)
+            finally:
+                add_cmd_to_history() # Add the command to the cmd history.
+                clean_cli()
+                print_mask(OVS_CLI_CMD_PROMPT, mask_len=0)
             continue
         elif ch_byte < 0x20 or ch_byte > 0x7E: # Special characters
             exit()
