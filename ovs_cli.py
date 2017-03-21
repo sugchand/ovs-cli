@@ -118,6 +118,45 @@ def print_cmd_list(cmd_diclist):
             print("   %s         %s" %(key, value[1]))
     print("\n")
 
+def get_last_token(cmd_in):
+    last_token = cmd_in.strip()
+    token_index = last_token.rfind(' ')
+    if token_index == -1:
+        last_token = cmd_in
+    else:
+        last_token = last_token[token_index:]
+    last_token = last_token.strip()
+    return last_token
+
+# Check if possible to do tab complete on last token in the command.
+# If yes, do the completion and update the command string.
+# If not return the command string as is.
+def do_tab_complete(cmd_in, dic_list):
+    num_matches = 0# number of matching tokens
+    if not cmd_in or cmd_in.endswith(' '):
+        # the command is either empty/ looking for next set token set.
+        print_cmd_list(dic_list)
+        return cmd_in
+    last_token = get_last_token(cmd_in)
+    if not last_token:
+        print_cmd_list(dic_list)
+        return cmd_in
+    match_key = last_token
+    for token_dic in dic_list:
+        for[key, _] in token_dic.items():
+            if key is last_token:
+                # Tab completion is done.return cmd as is
+                print_cmd_list(dic_list)
+                return cmd_in
+            if key.find(last_token) != -1:
+                #Found a match,
+                num_matches = num_matches + 1
+                match_key = key
+            if num_matches > 1: #Multiple matches, return original cmd.
+                print_cmd_list(dic_list)
+                return cmd_in
+    return cmd_in.rstrip(last_token) + match_key
+
 def is_token_string(token_key):
     if token_key.startswith('<') and token_key.endswith('>'):
         return True
@@ -135,13 +174,7 @@ def find_string_tokens(token_dic):
     return token_sublist
 
 def process_token(cmd_input, token_dic):
-    last_token = cmd_input.strip()
-    token_index = last_token.rfind(' ')
-    if token_index == -1:
-        last_token = cmd_input
-    else:
-        last_token = last_token[token_index:]
-    last_token = last_token.strip()
+    last_token = get_last_token(cmd_input)
     if last_token not in token_dic.keys():
         #the token doesnt match with any key when its a arbitrary string.
         # it is possible that there are multiple arbitrary string in the list.
@@ -261,7 +294,10 @@ if __name__ == '__main__':
                 continue
             push_tokenlist(cur_dic) # Push to the stack for future reference.
             cur_dic = token_sublist
-        elif ch_byte == 0x9 or ch_byte == 0x3F: # Tab/? handling.
+        elif ch_byte == 0x9: # Process tab completion
+            cmd_input = do_tab_complete(cmd_input, cur_dic)
+            continue
+        elif ch_byte == 0x3F: # ? handling.
             print_cmd_list(cur_dic)
             continue
         elif ch_byte == 0x7F: #Backspace,DEL handling
