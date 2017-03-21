@@ -205,6 +205,7 @@ def process_escape_chars():
     # Up : 0x1B, 0x5B, 0x41(27, 91, 65)
     # Down 0x1B, 0x5B, 0x42(27, 91, 66)
     global cmd_input
+    res = False
     old_cmd = cmd_input
     ch_byte = ord(getch())
     if ch_byte != 0x5B:
