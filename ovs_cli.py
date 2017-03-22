@@ -162,6 +162,17 @@ def is_token_string(token_key):
         return True
     return False
 
+# Populate all the child token entries in a Dic, if it is a optional entry.
+# The populated entries would be added along with the exisiting set.
+def populate_optional_tokenset(token_dic = None):
+    token_opt_list = []
+    if not token_dic:
+        return token_opt_list
+    for _, data in token_dic.items():
+        is_optional = data[2]
+        if is_optional:
+            token_opt_list.append(data[0])
+    return token_opt_list
 '''
 Return list of dictionary sublist that has string literal as key.
 '''
@@ -171,6 +182,9 @@ def find_string_tokens(token_dic):
         if not is_token_string(key):
             continue
         token_sublist.append(data[0])
+        # process the child tokens too if its an optional token.
+        token_sublist =  token_sublist + populate_optional_tokenset(
+                                         token_dic = data[0])
     return token_sublist
 
 def process_token(cmd_input, token_dic):
@@ -184,7 +198,10 @@ def process_token(cmd_input, token_dic):
     token_data = token_dic.get(last_token, None)
     if token_data == None or token_data[0] == None:
         return [False, []]
-    return [True, [token_data[0]]]
+    token_sublist = [token_data[0]]
+    token_sublist = token_sublist + populate_optional_tokenset(
+                                            token_dic = token_data[0])
+    return [True, token_sublist]
 
 def process_tokensublist(cmd_input, token_diclist):
     token_sublist = []
@@ -219,13 +236,19 @@ def process_escape_chars():
         # The command is loaded successfully from history, Clean the terminal.
         print_mask(OVS_CLI_CMD_PROMPT, mask_len=len(old_cmd))
 
+def init_cur_token_dic():
+    global cur_dic
+    cur_dic = [ovs_cmd]
+    cur_dic += populate_optional_tokenset(ovs_cmd)
+    return cur_dic
+
 def clean_cli():
     global gbl_token_stack
     global cmd_input
     global cur_dic
     gbl_token_stack = []
     cmd_input = ""
-    cur_dic = [ovs_cmd]
+    cur_dic = init_cur_token_dic()
 
 def do_execute_cmd(cmd):
     global OVS_SUDO_CMD
@@ -278,6 +301,7 @@ if __name__ == '__main__':
     print_banner()
     OVS_CLI_CMD_PROMPT = "\r " + OVS_CLI_CMD_PROMPT + " "
 
+    clean_cli()
     while(1) :
         # Reading the character as bytes.
         sys.stdout.write("%s%s" % (OVS_CLI_CMD_PROMPT, cmd_input))
